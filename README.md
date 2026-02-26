@@ -1,3 +1,5 @@
 ## ⭐AI-chatbot⚡
+## with groq API
 
-An AI chatbot that you can give it prompt and it will awnser back using groq api
+
+Ultra-fast LLM inference using Groq LPU technology.
