@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>y2xsGPT</title>
+    <link rel="stylesheet" href="AISTYLE.CSS">
+</head>
+<body>
+
+    <div class="main-container">
+        <header>
+            <h1>y2xs<span class="highlight">GPT</span> </h1>
+            <div class="status-dot"></div>
+        </header>
+
+        <div id="chat-box" class="chat-box">
+            <div class="message bot-message">
+                Hello. I am connected to the Neural Net. Ask me anything, and I will search the web for you.
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="user-input" placeholder="Enter message..." rows="1"></textarea>
+            <button type="button" onclick="sendMessage()" id="send-btn">
+                SEND <span class="arrow">➤</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+
+        // Prevent page refresh/unload
+        window.addEventListener('beforeunload', function (e) {
+            e.preventDefault();
+            e.returnValue = '';
+            return false;
+        });
+
+        // Prevent losing chat when switching tabs
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                // Page is back in focus - do nothing, keep chat
+            }
+        });
+
+        // Allow pressing "Enter" to send
+userInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+        if (e.shiftKey) {
+            // Let the default behavior happen (new line)
+        } else {
+            // Prevent new line and send message
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+});
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            console.log('Sending message:', message);
+            if (!message) return;
+
+
+            // 1. Add User Message to UI
+            addMessage(message, 'user-message');
+            userInput.value = '';
+            
+            // Show loading indicator
+            const loadingId = addMessage('Searching the grid...', 'bot-message loading');
+
+            try {
+                // 2. Send to Backend
+                const response = await fetch('http://127.0.0.1:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                // 3. Update UI with AI Response
+                // Remove loading message
+                const loadingDiv = document.getElementById(loadingId);
+                if(loadingDiv) loadingDiv.remove();
+
+                addMessage(data.response, 'bot-message');
+
+            } catch (error) {
+                console.error('Error:', error);
+                const loadingDiv = document.getElementById(loadingId);
+                if(loadingDiv) loadingDiv.textContent = "Error: server disconnected.";
+            }
+        }
+
+function addMessage(text, className) {
+    const id = 'msg-' + Math.random().toString(36).substr(2, 9);
+    
+    if (className.includes('bot-message') && !className.includes('loading')) {
+        // Create a container for the bot message and copy button
+        const container = document.createElement('div');
+        container.className = 'bot-message-container';
+        
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${className}`;
+        msgDiv.id = id;
+        msgDiv.innerText = text;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerHTML = '<img src="copy.webp" alt="Copy" style="width:20px; height:20px;">';
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(text);
+            copyBtn.innerText = 'DONE!';
+            setTimeout(() => copyBtn.innerHTML = '<img src="copy.webp" alt="Copy" style="width:20px; height:20px;">',2000);
+            };
+
+        container.appendChild(msgDiv);
+        container.appendChild(copyBtn);
+        chatBox.appendChild(container);
+    } else {
+        // Standard User/Loading message
+        const div = document.createElement('div');
+        div.className = `message ${className}`;
+        div.id = id;
+        div.innerText = text;
+        chatBox.appendChild(div);
+    }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return id;
+}
+    </script>
+</body>
+</html>

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>y2xsGPT</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* * CORE ARCHITECTURE (CSS Variables)
+         * Easy theming and maintainability.
+         */
+        :root {
+            --bg-core: #0a0b10;
+            --bg-card: #14161f;
+            --bg-highlight: #1c1f2b;
+            
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-accent: #38bdf8; /* Cyan */
+            --text-success: #34d399; /* Green */
+            
+            --font-main: 'Inter', sans-serif;
+            --font-code: 'Fira Code', monospace;
+            
+            --easing: cubic-bezier(0.23, 1, 0.32, 1);
+            --primary-neon: #00f3ff;   /* Cyan */
+            --secondary-neon: #bc13fe;
+        }
+
+        /* RESET & BASE */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        html { 
+            scroll-behavior: smooth; 
+            background-color: var(--bg-core);
+            color: var(--text-primary);
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; transition: color 0.2s; }
+        ul { list-style: none; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+        /* * UTILITIES
+         * Performance optimized classes
+         */
+        .container {
+            margin: 0 auto;
+            padding: 0 2rem;
+            max-width: 1200px;
+        }
+
+        .mono { font-family: var(--font-code); }
+        .text-accent { color: var(--text-accent); }
+        .text-success { color: var(--text-success); }
+
+        /* * SECTION: HERO (Terminal Style)
+         */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .terminal-window {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .terminal-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ef4444; }
+        .yellow { background: #f59e0b; }
+        .green { background: #10b981; }
+
+        .typewriter-text {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 600;
+            min-height: 3.2rem;
+            display: block;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            background-color: var(--text-accent);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .status-bar {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hero-cta {
+            margin-top: 3rem;
+        }
+
+        .btn-primary {
+            background: var(--text-accent);
+            color: var(--bg-core);
+            padding: 1rem 2rem;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: transform 0.2s var(--easing);
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            transform: scaleY(1.1);
+            transform: rotate(30);
+            background-color: white;
+            box-shadow: 0 0 15px var(--primary-neon,);
+        }
+
+        /* * SECTION: PROJECT ENGINE (Grid & Filters)
+         */
+        #projects {
+            padding: 5rem 0;
+            scroll-padding-top: 150 px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--text-accent);
+            border-color: var(--text-accent);
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        /* CARD COMPONENT */
+        .project-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 2rem;
+            transition: transform 0.3s var(--easing), box-shadow 0.3s var(--easing);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Performance: Hardware Acceleration hint */
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-color: var(--text-accent);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .folder-icon { width: 40px; height: 40px; color: var(--text-accent); }
+        
+        .card-links { display: flex; gap: 1rem; }
+        .card-links a:hover { color: var(--text-accent); }
+
+        .project-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .project-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .tech-stack {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tech-tag {
+            font-family: var(--font-code);
+            color: var(--text-secondary);
+        }
+
+        .breakdown-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.03);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .breakdown-btn:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* * COMPONENT: MODAL (Dialog)
+         */
+        dialog {
+            background: var(--bg-highlight);
+            color: var(--text-primary);
+            border: 1px solid var(--text-accent);
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            margin: auto;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        dialog::backdrop {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .modal-section h4 {
+            color: var(--text-accent);
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .code-snippet {
+            background: #000;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            color: var(--text-success);
+            overflow-x: auto;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        /* TOAST NOTIFICATION */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--text-accent);
+            color: var(--bg-core);
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .typewriter-text { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="container hero">
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </div>
+            
+            <div class="mono">
+                <span class="text-success">➜</span> <span class="text-accent">~</span> <span id="typewriter" class="typewriter-text"></span><span class="cursor">&nbsp;</span>
+            </div>
+
+            <div class="status-bar mono">
+                <div class="status-item">
+                    <span class="text-accent">●</span> Current Status: <span class="text-primary">Ready to talk</span>
+                </div>
+                <div class="status-item" id="copy-email">
+                    <span class="text-success">✉</span> y2xsGPT
+                </div>
+                <div class="status-item">
+                    <span class="text-accent">⚡</span> Replying speed: fast
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-cta">
+            <a href="./Ai.html" target="_blank" rel="nofollow noopener noreferrer" class="btn-primary">Talk With y2xsGPT</a>
+        </div>
+    </section>
+
+    <main id="projects" class="container">
+        <div class="section-header" style="margin-bottom: 2rem;">
+        </div>
+
+        <div id="filter-container" class="filter-bar">
+            </div>
+
+        <div id="project-grid" class="project-grid">
+            </div>
+    </main>
+
+    <dialog id="tech-modal">
+        <button class="close-modal" id="close-modal">&times;</button>
+        <h3 id="modal-title" class="project-title"></h3>
+
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+
+        /*
+        ========================================
+        2. TYPEWRITER EFFECT
+        ========================================
+        */
+        const typeText = "Hello World. I am an AI that will chat with you. :)";
+        const typeElement = document.getElementById('typewriter');
+        let typeIndex = 0;
+
+        function typeWriter() {
+            if (typeIndex < typeText.length) {
+                typeElement.innerHTML += typeText.charAt(typeIndex);
+                typeIndex++;
+                setTimeout(typeWriter, 50); // Typing speed
+            }
+        }
+        
+        // Start typing on load
+        window.onload = typeWriter;
+
+        function renderProjects(filterTag) {
+            grid.innerHTML = ''; // Clear grid
+            
+            const filtered = filterTag === 'All' 
+                ? projects 
+                : projects.filter(p => p.tags.includes(filterTag));
+
+            // Use DocumentFragment for performance (single reflow)
+            const fragment = document.createDocumentFragment();
+
+            filtered.forEach(project => {
+                const card = document.createElement('article');
+                card.className = 'project-card';
+                card.innerHTML = `
+    
+                        ${project.tags.map(tag => `<span class="tech-tag">#${tag}</span>`).join('')}
+                `;
+                fragment.appendChild(card);
+            });
+            grid.appendChild(fragment);
+        }
+
+        // Filter Logic
+        function filterProjects(tag, btnElement) {
+            // Update UI
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            
+            // Re-render
+            renderProjects(tag);
+        }
+
+        // Initial Render
+        renderProjects('All');
+
+        /*
+        ========================================
+        4. MODAL LOGIC
+        ========================================
+        */
+        const modal = document.getElementById('tech-modal');
+        const closeModal = document.getElementById('close-modal');
+
+        function openModal(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            
+            document.getElementById('modal-title').textContent = project.title;
+            document.getElementById('modal-challenge').textContent = project.breakdown.challenge;
+            document.getElementById('modal-solution').textContent = project.breakdown.solution;
+            document.getElementById('modal-snippet').textContent = project.breakdown.snippet;
+            
+            modal.showModal();
+        }
+
+        closeModal.onclick = () => modal.close();
+
+        // Close when clicking outside
+        modal.addEventListener('click', (e) => {
+            const rect = modal.getBoundingClientRect();
+            const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+                && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+            if (!isInDialog) {
+                modal.close();
+            }
+        });
+
+        /*
+        ========================================
+        5. UTILITIES (Copy to Clipboard)
+        ========================================
+        */
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
