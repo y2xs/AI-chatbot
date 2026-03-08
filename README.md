@@ -24,6 +24,3 @@ What this means: You are free to use, copy, modify, and distribute this software
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. The author is not liable for any issues, data leaks (if you expose your API key), or damages arising from the use of this code.
 
 See the LICENSE file for the full legal text.
-
-
-Would you like me to put the **CoinFlip** or the **Hologram** project into this exact same "one-block" format next?
